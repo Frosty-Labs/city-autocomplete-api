@@ -1,0 +1,10 @@
+go.sum
+*.exe
+city-autocomplete-api
+.DS_Store
+*.log
+.vscode/
+.idea/
+node_modules/
+bin/
+*.out
