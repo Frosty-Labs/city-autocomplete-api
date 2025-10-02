@@ -1,13 +1,13 @@
-# Use multi-stage build to keep the final image small
+# Build stage
 FROM golang:1.21-alpine AS builder
 
-# Install git and sqlite3 dependencies for building
-RUN apk add --no-cache git build-base
+# Install build dependencies
+RUN apk add --no-cache git gcc musl-dev sqlite-dev
 
 # Set working directory
 WORKDIR /app
 
-# Copy go mod files first for better caching
+# Copy go mod files
 COPY go.mod go.sum ./
 
 # Download dependencies
@@ -16,13 +16,13 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=1 go build -o main .
+# Build the application 
+RUN CGO_ENABLED=1 GOOS=linux go build -o main .
 
-# Final stage
+# Production stage
 FROM alpine:latest
 
-# Install sqlite package
+# Install runtime dependencies
 RUN apk --no-cache add ca-certificates sqlite
 
 # Create non-root user
@@ -31,19 +31,17 @@ RUN adduser -D -s /bin/sh appuser
 # Set working directory
 WORKDIR /app
 
-# Copy the binary from builder stage
-COPY --from=builder /app/main .
-
-# Copy the binary, database file, and CSV file
+# Copy binary and data files from builder
+COPY --from=builder /app/main ./
 COPY --from=builder /app/cities.db ./
 COPY --from=builder /app/world-cities.csv ./
 
-# Change ownership to appuser
+# Set ownership
 RUN chown -R appuser:appuser /app
 USER appuser
 
-# Expose port (default is 8080)
+# Expose port
 EXPOSE 8080
 
-# Command to run the executable
+# Run the application
 CMD ["./main"]
