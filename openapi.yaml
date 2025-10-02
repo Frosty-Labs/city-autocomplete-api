@@ -1,0 +1,126 @@
+openapi: 3.0.3
+info:
+  title: City Autocomplete API
+  description: A high-performance Go-based API for city name autocompletion with over 32,000 cities from around the world. Features popularity-based ranking to recommend frequently searched cities.
+  version: 1.0.0
+  contact:
+    name: API Support
+    url: https://github.com/your-repo/city-autocomplete-api
+servers:
+  - url: http://localhost:8080
+    description: Development server
+  - url: https://your-api-url.com
+    description: Production server
+paths:
+  /autocomplete:
+    get:
+      summary: Search for cities by name with autocomplete functionality
+      description: Returns a list of cities matching the search query, prioritizing prefix matches over substring matches and popular cities over less popular ones
+      operationId: getCitiesAutocomplete
+      parameters:
+        - name: q
+          in: query
+          description: Search query string for city names
+          required: true
+          schema:
+            type: string
+            example: "ber"
+        - name: limit
+          in: query
+          description: Maximum number of results to return (default: 10, maximum: 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 5
+      responses:
+        '200':
+          description: Successful response with matching cities. Results are ordered by prefix match priority, then by search popularity (most searched cities appear first).
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/City'
+              example:
+                - name: "Berlin"
+                  country: "Germany"
+                  subcountry: "Berlin"
+                  geonameid: "2950159"
+                - name: "Bern"
+                  country: "Switzerland"
+                  subcountry: "Bern"
+                  geonameid: "2661552"
+        '400':
+          description: Bad request - missing required query parameter 'q'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Query parameter 'q' is required"
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Database error occurred"
+  /:
+    get:
+      summary: API Root Endpoint
+      description: Returns basic information about the API
+      operationId: getApiInfo
+      responses:
+        '200':
+          description: Information about the API
+          content:
+            text/plain:
+              schema:
+                type: string
+              example: "City Autocomplete API\n\nUse /autocomplete?q=searchterm to search for cities"
+components:
+  schemas:
+    City:
+      type: object
+      required:
+        - name
+        - country
+        - subcountry
+        - geonameid
+      properties:
+        name:
+          type: string
+          description: The name of the city
+          example: "London"
+        country:
+          type: string
+          description: The country where the city is located
+          example: "United Kingdom"
+        subcountry:
+          type: string
+          description: The administrative division within the country (e.g., state, province)
+          example: "England"
+        geonameid:
+          type: string
+          description: The Geonames ID for the city
+          example: "2643743"
+    Error:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Query parameter 'q' is required"
+tags:
+  - name: autocomplete
+    description: City search and autocomplete functionality
+  - name: cities
+    description: Operations related to city data
+  - name: popularity
+    description: Features related to search popularity and ranking

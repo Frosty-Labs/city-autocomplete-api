@@ -1,23 +1,24 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strconv"
-	"strings"
 
+	"city-autocomplete-api/data"
 	"city-autocomplete-api/models"
 )
 
 // AutocompleteHandler handles the autocomplete requests
 type AutocompleteHandler struct {
-	cities []models.City
+	db *sql.DB
 }
 
 // NewAutocompleteHandler creates a new instance of AutocompleteHandler
-func NewAutocompleteHandler(cities []models.City) *AutocompleteHandler {
+func NewAutocompleteHandler(database *sql.DB) *AutocompleteHandler {
 	return &AutocompleteHandler{
-		cities: cities,
+		db: database,
 	}
 }
 
@@ -40,51 +41,23 @@ func (h *AutocompleteHandler) Autocomplete(w http.ResponseWriter, r *http.Reques
 		}
 	}
 
-	query = strings.ToLower(query)
-	var results []models.City
-
-	// First, find cities where the query matches the beginning of the name (higher priority)
-	var prefixMatches []models.City
-	var substringMatches []models.City
-
-	for _, city := range h.cities {
-		cityNameLower := strings.ToLower(city.Name)
-		if strings.HasPrefix(cityNameLower, query) {
-			prefixMatches = append(prefixMatches, city)
-		} else if strings.Contains(cityNameLower, query) {
-			substringMatches = append(substringMatches, city)
-		}
-
-		// Stop early if we have enough results
-		if len(prefixMatches)+len(substringMatches) >= limit {
-			break
-		}
+	// Search for cities in the database
+	results, err := data.SearchCities(h.db, query, limit)
+	if err != nil {
+		http.Error(w, "Database error occurred", http.StatusInternalServerError)
+		return
 	}
 
-	// Combine results with prefix matches first (higher priority)
-	results = append(prefixMatches, substringMatches...)
+	// Use models.City to ensure the import is recognized
+	var _ []models.City = results
 
-	// If we didn't get enough results, continue searching
-	if len(results) < limit {
-		for _, city := range h.cities {
-			cityNameLower := strings.ToLower(city.Name)
-			alreadyAdded := false
-			// Check if already in results
-			for _, res := range results {
-				if res.GeonameID == city.GeonameID {
-					alreadyAdded = true
-					break
-				}
-			}
-
-			if !alreadyAdded && strings.Contains(cityNameLower, query) {
-				results = append(results, city)
-				if len(results) >= limit {
-					break
-				}
-			}
+	// Increment search counts for each returned city in a goroutine to not block the response
+	go func() {
+		for _, city := range results {
+			// We'll ignore the error here as we don't want to affect the response
+			_ = data.IncrementSearchCount(h.db, city.GeonameID)
 		}
-	}
+	}()
 
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Access-Control-Allow-Origin", "*") // Allow CORS for web usage
