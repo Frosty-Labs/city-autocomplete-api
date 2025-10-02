@@ -7,7 +7,7 @@ RUN apk add --no-cache git build-base
 # Set working directory
 WORKDIR /app
 
-# Copy go mod files
+# Copy go mod files first for better caching
 COPY go.mod go.sum ./
 
 # Download dependencies
@@ -17,7 +17,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN go build -o main .
+RUN CGO_ENABLED=1 go build -o main .
 
 # Final stage
 FROM alpine:latest
