@@ -56,3 +56,34 @@ GET /autocomplete?q=lon&limit=3
   ```bash
   PORT=3000 go run main.go
   ```
+
+## Docker Deployment
+
+This application can be deployed using Docker or Docker Compose.
+
+### Using Docker
+
+Build the image:
+```bash
+docker build -t city-autocomplete-api .
+```
+
+Run the container:
+```bash
+docker run -p 8080:8080 city-autocomplete-api
+```
+
+### Using Docker Compose
+
+Run with docker-compose:
+```bash
+docker-compose up -d
+```
+
+The API will be available at `http://localhost:8080`
+
+### Environment Variables
+
+- `PORT`: Port to run the server on (default: 8080)
+- `DB_PATH`: Path to the SQLite database file (default: cities.db)
+- `CSV_PATH`: Path to the CSV file for database initialization (default: world-cities.csv)

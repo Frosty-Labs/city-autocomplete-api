@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  city-api:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - PORT=8080
+      - DB_PATH=cities.db
+      - CSV_PATH=world-cities.csv
+    volumes:
+      - ./cities.db:/app/cities.db  # Persist database changes
+      - ./world-cities.csv:/app/world-cities.csv  # Mount CSV file if needed
+    restart: unless-stopped
