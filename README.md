@@ -59,7 +59,7 @@ GET /autocomplete?q=lon&limit=3
 
 ## Docker Deployment
 
-This application can be deployed using Docker or Docker Compose.
+This application can be deployed using Docker, Docker Compose, or self-hosted platforms like Coolify.
 
 ### Using Docker
 
@@ -81,6 +81,22 @@ docker-compose up -d
 ```
 
 The API will be available at `http://localhost:8080`
+
+### Deploying on Coolify
+
+To deploy on Coolify:
+
+1. Add your repository to Coolify as a new application
+2. Select "Dockerfile" as the build method
+3. Use `.` as the build path
+4. Set the production method to "Docker Compose" or "Dockerfile"
+5. Map port 8080 to your desired external port
+6. Add any environment variables if needed:
+   - `PORT`: Port to run the server on (default: 8080)
+   - `DB_PATH`: Path to the SQLite database file (default: cities.db)
+   - `CSV_PATH`: Path to the CSV file for database initialization (default: world-cities.csv)
+
+Coolify will automatically build the Docker image from your Dockerfile and deploy it.
 
 ### Environment Variables
 
